@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+    <head>
+  <meta charset="UTF-8">
+  
+  <title>{:L('USER_INDEX_XGHQYH')}</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+  <link rel="stylesheet" href="__PUBLIC__/layui/css/layui.css">
+  <link rel="stylesheet" href="__PUBLIC__/layui/css/admin.css">
+
+</head>
+<body>
+<style>
+
+    .laber-height{line-height: 34px;}
+    .zfb,.wx,.yhk,.submit{display:none;}
+    .line{line-height:30px!important;}
+</style>
+
+
+<div class="layui-tab-content" >
+
+    <!-- 网站设置 -->
+    <div id="layer-photos-demo" class="layer-photos-demo layui-tab-item layui-show" style="width:70%;">
+
+        <div class="layui-card-body ">
+            <table class="layui-table layui-hide" id="test-table-data" lay-filter="test3"></table>
+        </div>
+
+        <form class="layui-form layui-form-pane">
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">文件上传</label>
+                <div class="layui-input-block">
+                    <button type="button" class="layui-btn layui-btn-primary" id="zfpz"><i class="layui-icon"></i>选择文件</button>
+                    <input type="hidden" name="file" />
+                    &nbsp;&nbsp;&nbsp;&nbsp;<span class="uplocad" style="border:1px solid #666;"></span>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">支付密码</label>
+                <div class="layui-input-block">
+                    <input type="password" name="paypass" value="" placeholder="" autocomplete="off" class="layui-input">
+                </div>
+                <div class="layui-form-mid layui-word-aux"></div>
+            </div>
+
+            <div class="layui-form-item">
+                <button class="layui-btn" lay-submit="" lay-filter="demo2">立即提交</button>
+            </div>
+        </form>
+    </div>
+    <!-- 网站设置结束 -->
+</div>
+</body>
+
+<script src="__PUBLIC__/layui/layui.js"></script>
+<script>
+    layui.use(['form', 'layedit', 'upload' , 'jquery','table'], function(){
+        var form = layui.form
+            ,$ = layui.jquery
+            ,table = layui.table
+            ,layer = layui.layer
+            ,upload = layui.upload;
+
+
+        //指定允许上传的文件类型
+        upload.render({
+            elem: '#zfpz'
+            ,url: '{:U("upload")}'
+            ,accept: 'file' //普通文件
+            ,size: 6000 //限制文件大小，单位 KB
+            ,done: function(res){
+                // 上传成功
+                if(res.status == 1){
+                    layer.msg(res.info);
+                    $('.uplocad').text(res.data.url);
+                    $('input[type=hidden]').val(res.data.url);
+                    $('#test-table-data').next('.layui-table-view').remove();
+
+                    //展示已知数据
+                    table.render({
+                        elem: '#test-table-data'
+                        // ,url:'{:U("PayList")}'
+                        ,page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
+                            layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
+                            ,curr: 1 //设定初始在第 5 页
+                            ,groups: 8 //只显示 1 个连续页码
+                            ,first: false //不显示首页
+                            ,last: false //不显示尾页
+                        }
+                        ,cols: [[ //标题栏
+                            {field: 'username', title: '用户名', width: 80}
+                            ,{field: 'cardid', title: '身份证号', width: 250}
+                            ,{field: 'bank', title: '银行支行', width: 100}
+                            ,{field: 'bankcard', title: '银行卡号', minWidth: 260}
+                            ,{field: 'money', title: '金额', minWidth: 80}
+                            ,{field: 'addtime', title: '添加时间', width: 200}
+                        ]]
+                        ,data: res.data.data
+                        ,height:"500px"
+                        ,id: 'testReload'
+                        ,username: 'testReload'
+                        ,bankcard: 'testReload'
+                        ,addtime: 'testReload'
+                    });
+                }else{
+                    layer.msg(res.info);
+                    $('.uplocad').text('');
+                }
+                // 上传成功
+            }
+            ,error: function(){
+                //演示失败状态，并实现重传
+                layer.msg('网络异常，请稍后重试', {icon: 5, shade: 0.1});
+            }
+        });
+
+
+        /**
+         * [数据提交]
+         */
+        form.on('submit(demo2)', function(data){
+            // var loadVal = layer.load(3);
+            var data = data.field
+            var url = "{:U('SinglePay')}";
+            $.post(url, data, function(res) {
+                // layer.close(loadVal);
+                if(res.status == 1){
+                    layer.msg(res.info, {icon: 6, shade: 0.1}, function(){
+                        window.location.reload();
+                    });
+                }else{
+                    layer.msg(res.info, {icon: 5, shade: 0.1});
+                }
+            }, 'json');
+            
+            return false;
+        });
+
+
+        //监听单元格编辑
+        table.on('edit(layui-table)', function(obj){
+            var value = obj.value //得到修改后的值
+            ,data = obj.data //得到所在行所有键值
+            ,field = obj.field; //得到字段
+            layer.msg('[ID: '+ data.id +'] ' + field + ' 字段更改为：'+ value);
+        });
+        
+
+        /**
+         * 修改
+         * @param    {[type]} a [description]
+         * @return  {[type]}   [description]
+         */
+        window.update = function(a){
+            layer.open({
+                type:2,
+                shadeClose:true,
+                title:'修改',
+                area: ['800px', '500px'],
+                content:a,
+            });
+        };
+
+
+        /**
+         * 删除
+         */
+        window.del = function(url , data){
+            layer.alert('确定要删除吗？',{
+                title:'删除操作',
+                shadeClose:true,
+                btn:['确定','取消']
+            },function(){
+                layer.load(1,{shade:0.2});
+                var c = $('input[name=_token]').val();
+                $.post(url , {admin_id:data,_token:c} , function(data){
+                    layer.closeAll();
+                    if (data.status == 1) {
+                        /*成功*/
+                        layer.msg(data.message, {icon: 6,time:1500, shade: 0.1},function(){
+                            location.reload();
+                        });
+                    }else{
+                        layer.msg(data.message, {icon: 5,time:1000, shade: 0.6},function(){});
+                    }
+                },'json');
+            });
+        };
+        
+
+    });
+
+
+    $(function(){
+
+        /**
+         * [数据提交]
+         */
+        form.on('submit(demo2)', function(data){
+            if(data.field.zfpz1 == "" && data.field.zfpz2 == "" && data.field.zfpz3 == ""){
+                layer.msg('请上传您的付款截图', {icon: 5, shade: 0.1});
+                return false;
+            }
+
+            var data_info = data.field;
+            var tj_url = "{{ url('pay/recharge') }}";
+            var load_ing = layer.load(3);
+            $.post(tj_url, data_info, function (res) {
+                layer.close(load_ing);
+                if(res.status == 1){
+                    $('.wz-pay-box').hide();
+                    $('.recharge-completed-box').show();
+                }else{
+                    layer.msg('网络异常，请稍后重试', {icon: 5, shade: 0.1});
+                }
+            }, 'json');
+            return false;
+        });
+        
+    });
+
+</script>
+
+
+</html>
